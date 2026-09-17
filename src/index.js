@@ -11,20 +11,30 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 4000
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  process.env.ADMIN_URL    || 'http://localhost:5174',
+const normalizeOrigin = (value) => {
+  if (!value) return ''
+  try { return new URL(value).origin } catch { return value.replace(/\/+$/, '') }
+}
+
+const allowedOrigins = new Set([
+  normalizeOrigin(process.env.FRONTEND_URL || 'http://localhost:5173'),
+  normalizeOrigin(process.env.ADMIN_URL || 'http://localhost:5174'),
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
-]
+  'http://localhost:5173',
+  'http://localhost:5174',
+])
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) cb(null, true)
-    else {
-      const error = new Error(`CORS blocked: ${origin}`)
-      error.status = 403
-      cb(error)
+    if (!origin || allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+      cb(null, true)
+      return
     }
+
+    const error = new Error(`CORS blocked: ${origin}`)
+    error.status = 403
+    cb(error)
   },
   credentials: true,
 }))
