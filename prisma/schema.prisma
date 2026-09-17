@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoProvider {
+  YOUTUBE
+  VIMEO
+  CLOUDFLARE
+  MUX
+  DIRECT_HLS
+  DIRECT_MP4
+  EXTERNAL_EMBED
+}
+
+enum VideoStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum ContentType {
+  MOVIE
+  SERIES
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
+model Content {
+  id              String        @id @default(cuid())
+  type            ContentType   @default(MOVIE)
+  title           String
+  slug            String        @unique
+  tmdbId          String?
+  description     String
+  longDescription String?
+  posterUrl       String?
+  backdropUrl     String?
+  trailerUrl      String?
+  year            Int?
+  duration        String?
+  genre           String?
+  rating          String?
+  imdb            String?
+  director        String?
+  cast            String[]
+  tags            String[]
+  badge           String?
+  seasons         Int?
+  isPublished     Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  videos          ContentVideo[]
+  seasonsData     Season[]
+}
+
+model ContentVideo {
+  id          String        @id @default(cuid())
+  contentId   String
+  provider    VideoProvider
+  externalId  String?
+  playbackUrl String?
+  embedUrl    String?
+  quality     String?
+  status      VideoStatus   @default(READY)
+  isPrimary   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  content     Content       @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId, isPrimary])
+}
+
+model Season {
+  id           String    @id @default(cuid())
+  contentId    String
+  seasonNumber Int
+  title        String?
+  content      Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episodes     Episode[]
+
+  @@unique([contentId, seasonNumber])
+}
+
+model Episode {
+  id            String         @id @default(cuid())
+  seasonId      String
+  episodeNumber Int
+  title         String
+  description   String
+  thumbnailUrl  String?
+  duration      String?
+  isPublished   Boolean        @default(false)
+  season        Season         @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  videos        EpisodeVideo[]
+
+  @@unique([seasonId, episodeNumber])
+}
+
+model EpisodeVideo {
+  id          String       @id @default(cuid())
+  episodeId   String
+  provider    VideoProvider
+  embedUrl    String?
+  playbackUrl String?
+  isPrimary   Boolean      @default(true)
+  status      VideoStatus  @default(READY)
+  episode     Episode      @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+}
