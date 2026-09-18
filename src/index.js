@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import authRouter from './routes/auth.js'
+import userRouter from './routes/users.js'
 import contentRouter from './routes/content.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
@@ -34,6 +35,7 @@ app.use(express.json())
 app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }))
 
 app.use('/api/auth',    authRouter)
+app.use('/api/users',   userRouter)
 app.use('/api/content', contentRouter)
 
 app.use(errorHandler)
