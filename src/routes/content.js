@@ -180,7 +180,6 @@ router.post('/', requireAuth, async (req, res) => {
   } = req.body
   if (!title || !description) return res.status(400).json({ error: 'title and description are required' })
   const genres = normalizeGenres(genre)
-  if (genres.length < 3) return res.status(400).json({ error: 'At least 3 genres are required' })
 
   const slug = await makeSlug(title)
   const item = await prisma.content.create({
@@ -215,9 +214,6 @@ router.patch('/:id', requireAuth, async (req, res) => {
     year, duration, genre, rating, imdb, director, cast, tags, badge, seasons, isPublished,
     video, seasonsData,
   } = req.body
-  if (genre !== undefined && normalizeGenres(genre).length < 3) {
-    return res.status(400).json({ error: 'At least 3 genres are required' })
-  }
   const item = await prisma.content.update({
     where: { id: req.params.id },
     data: {
